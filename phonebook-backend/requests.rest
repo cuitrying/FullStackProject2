@@ -1,0 +1,39 @@
+### Get all persons
+GET http://localhost:3001/api/persons
+
+### Delete a person (replace 1 with actual ID)
+DELETE http://localhost:3001/api/persons/1
+
+### Add a new person (valid request)
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Test Person",
+    "number": "123-456789"
+}
+
+### Test missing name
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "number": "123-456789"
+}
+
+### Test missing number
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Test Person"
+}
+
+### Test duplicate name (after adding first Test Person)
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Test Person",
+    "number": "999-999999"
+} 
