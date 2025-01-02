@@ -1,39 +1,22 @@
-# syntax = docker/dockerfile:1
+FROM node:20-slim
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=20.10.0
-FROM node:${NODE_VERSION}-slim as base
-
-LABEL fly_launch_runtime="Node.js"
-
-# Node.js app lives here
 WORKDIR /app
 
-# Set production environment
-ENV NODE_ENV="production"
+# Copy package files
+COPY package*.json ./
 
+# Install dependencies
+RUN npm install
 
-# Throw-away build stage to reduce size of final image
-FROM base as build
-
-# Install packages needed to build node modules
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
-
-# Install node modules
-COPY package-lock.json package.json ./
-RUN npm ci
-
-# Copy application code
+# Copy app source
 COPY . .
 
+# Set environment variables
+ENV PORT=3001
+# ENV MONGODB_URI=mongodb+srv://fullstack123:<db_password>@cluster0.9t7ju.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 
-# Final stage for app image
-FROM base
+# Expose port
+EXPOSE 3001
 
-# Copy built application
-COPY --from=build /app /app
-
-# Start the server by default, this can be overwritten at runtime
-EXPOSE 3000
-CMD [ "npm", "run", "start" ]
+# Start the app
+CMD ["node", "index.js"]

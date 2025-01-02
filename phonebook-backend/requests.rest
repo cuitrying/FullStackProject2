@@ -1,39 +1,53 @@
 ### Get all persons
 GET http://localhost:3001/api/persons
 
-### Delete a person (replace 1 with actual ID)
-DELETE http://localhost:3001/api/persons/1
+### Get single person (replace ID)
+GET http://localhost:3001/api/persons/6776f32d7c5349183b2dac82
 
-### Add a new person (valid request)
+### Update person (replace ID)
+PUT http://localhost:3001/api/persons/6776f32d7c5349183b2dac82
+Content-Type: application/json
+
+{
+    "name": "Test Person",
+    "number": "12-345678"
+}
+
+### Delete person (replace ID)
+DELETE http://localhost:3001/api/persons/6776f32d7c5349183b2dac82
+
+### Get info
+GET http://localhost:3001/info
+
+### Add new person
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Database",
+    "number": "040-123456"
+}
+
+### Get all persons
+GET http://localhost:3001/api/persons
+
+### Get single person
+GET http://localhost:3001/api/persons/6776f37d7c5349183b2dac88
+
+### Test invalid name (too short)
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Ab",
+    "number": "040-123456"
+}
+
+### Test invalid phone number
 POST http://localhost:3001/api/persons
 Content-Type: application/json
 
 {
     "name": "Test Person",
-    "number": "123-456789"
+    "number": "116-0011111110"
 }
-
-### Test missing name
-POST http://localhost:3001/api/persons
-Content-Type: application/json
-
-{
-    "number": "123-456789"
-}
-
-### Test missing number
-POST http://localhost:3001/api/persons
-Content-Type: application/json
-
-{
-    "name": "Test Person"
-}
-
-### Test duplicate name (after adding first Test Person)
-POST http://localhost:3001/api/persons
-Content-Type: application/json
-
-{
-    "name": "Test Person",
-    "number": "999-999999"
-} 
