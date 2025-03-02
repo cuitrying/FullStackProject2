@@ -13,7 +13,6 @@ COPY . .
 
 # Set environment variables
 ENV PORT=3001
-# ENV MONGODB_URI=mongodb+srv://fullstack123:<db_password>@cluster0.9t7ju.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 
 # Expose port
 EXPOSE 3001
