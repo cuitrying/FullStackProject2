@@ -5,8 +5,6 @@ const app = require('../app')
 const api = supertest(app)
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const { beforeEach, describe, test, afterAll } = require('node:test')
-const assert = require('node:assert')
 
 let token = null
 let userId = null
@@ -26,50 +24,47 @@ const initialBlogs = [
   }
 ]
 
+beforeAll(async () => {
+  await Blog.deleteMany({});
+  await User.deleteMany({});
+});
+
 beforeEach(async () => {
-//     await Blog.deleteMany({}) // Clear the database before each test
-//   const blog = new Blog({
-//     title: 'Test Blog',
-//     author: 'Test Author',
-//     url: 'http://testblog.com',
-//     likes: 0
-  await Blog.deleteMany({})
-  await User.deleteMany({})
+  await Blog.deleteMany({});
+  await User.deleteMany({});
 
   // Create a test user
-  const passwordHash = await bcrypt.hash('testpass', 10)
+  const passwordHash = await bcrypt.hash('testpass', 10);
   const user = new User({
     username: 'testuser',
     name: 'Test User',
-    passwordHash
-  })
-  const savedUser = await user.save()
-  userId = savedUser._id
+    passwordHash,
+  });
+  const savedUser = await user.save();
+  userId = savedUser._id;
 
   // Get token for test user
   const loginResponse = await api
     .post('/api/login')
     .send({
       username: 'testuser',
-      password: 'testpass'
-    })
-  token = loginResponse.body.token
+      password: 'testpass',
+    });
+  token = loginResponse.body.token;
 
-//   describe('GET /api/blogs', () => {
-//     test('returns the correct amount of blog posts in JSON format', async () => {
-//       const response = await request(app).get('/api/blogs')
-//       assert.strictEqual(response.status, 200)
-//       assert.strictEqual(response.type, 'application/json')
-//       assert.strictEqual(response.body.length, 1) // Expecting 1 blog post
-//     })
   // Create initial blogs with user reference
-  const blogObjects = initialBlogs.map(blog => new Blog({
+  const blogObjects = initialBlogs.map((blog) => new Blog({
     ...blog,
-    user: userId
-  }))
-  const promiseArray = blogObjects.map(blog => blog.save())
-  await Promise.all(promiseArray)
-})
+    user: userId, // Associate each blog with the user
+  }));
+  
+  // Save blogs and update user's blogs array
+  const savedBlogs = await Promise.all(blogObjects.map(blog => blog.save()));
+  
+  // Update the user's blogs array with all blog IDs
+  const blogIds = savedBlogs.map(blog => blog._id);
+  await User.findByIdAndUpdate(userId, { blogs: blogIds });
+});
 
 // test('blog posts have an id property', async () => {
 //     const response = await request(app).get('/api/blogs')
@@ -134,10 +129,6 @@ describe('addition of a new blog', () => {
 
   test('likes defaults to 0 if not provided', async () => {
     const newBlog = {
-        // title: 'Blog to Delete',
-        // author: 'Author',
-        // url: 'http://deleteblog.com',
-        // likes: 0
       title: 'Test Blog No Likes',
       author: 'Test Author',
       url: 'http://testnolike.com'
@@ -218,6 +209,125 @@ describe('updating a blog', () => {
   })
 })
 
+describe('Blog creation and retrieval', () => {
+  beforeEach(async () => {
+    await User.deleteMany({});
+    
+    // Create a test user with a unique username
+    const passwordHash = await bcrypt.hash('testpass', 10);
+    const user = new User({
+      username: `testuser_${Date.now()}`, // Add timestamp to make it unique
+      name: 'Test User',
+      passwordHash,
+    });
+    await user.save();
+  });
+  
+  test('successfully creates a new blog with a creator', async () => {
+    // Get a user from the database
+    const user = await User.findOne();
+    
+    // Get a token for the user
+    const loginResponse = await api
+      .post('/api/login')
+      .send({
+        username: user.username,
+        password: 'testpass',
+      });
+    const token = loginResponse.body.token;
+    
+    const newBlog = {
+      title: 'Test Blog with Creator',
+      author: 'Test Author',
+      url: 'http://testblog.com',
+      likes: 5
+    };
+    
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+    
+    // Check that the created blog has a creator
+    expect(response.body.user).toBeDefined();
+    expect(response.body.user.username).toBeDefined();
+    expect(response.body.user.name).toBeDefined();
+  });
+  
+  test('retrieves all blogs with creator information', async () => {
+    // Get a user from the database
+    const user = await User.findOne();
+    
+    // Create a blog with the user as creator
+    const blog = new Blog({
+      title: 'Test Blog for Creator Info',
+      author: 'Test Author',
+      url: 'http://testblog.com',
+      likes: 5,
+      user: user._id
+    });
+    const savedBlog = await blog.save();
+    
+    // Update the user's blogs array
+    user.blogs = user.blogs.concat(savedBlog._id);
+    await user.save();
+    
+    const response = await api
+      .get('/api/blogs')
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+    
+    console.log('Response body:', JSON.stringify(response.body, null, 2));
+    
+    // Find the blog we just created in the response
+    const createdBlog = response.body.find(b => b.id === savedBlog._id.toString());
+    
+    // Check that the blog has creator information
+    expect(createdBlog).toBeDefined();
+    expect(createdBlog.user).toBeDefined();
+    expect(createdBlog.user.username).toBeDefined();
+    expect(createdBlog.user.name).toBeDefined();
+  });
+})
+
+describe('when there are blogs in the database', () => {
+  test('blogs are returned with creator information', async () => {
+    const response = await api.get('/api/blogs');
+    
+    // Check that blogs have creator information
+    expect(response.body[0].user).toBeDefined();
+    expect(response.body[0].user.username).toBeDefined();
+    expect(response.body[0].user.name).toBeDefined();
+  });
+
+  test('new blog is created with a creator', async () => {
+    const newBlog = {
+      title: 'Test Blog with Creator',
+      author: 'Test Author',
+      url: 'http://testblog.com',
+      likes: 5
+    };
+
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    // Check that the created blog has a creator
+    expect(response.body.user).toBeDefined();
+    expect(response.body.user.username).toBeDefined();
+    expect(response.body.user.name).toBeDefined();
+  });
+})
+
 afterAll(async () => {
-  await mongoose.connection.close()
-}) 
+  await mongoose.connection.close();
+}, 10000); // Add a timeout value
+
+// afterAll(async () => {
+//   await mongoose.connection.close()
+// }) 
