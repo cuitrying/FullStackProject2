@@ -158,32 +158,90 @@ describe('addition of a new blog', () => {
 
 describe('deletion of a blog', () => {
   test('succeeds with status code 204 if id is valid and user is creator', async () => {
-    const blogsAtStart = await Blog.find({})
-    const blogToDelete = blogsAtStart[0]
+    // Create a blog as the test user
+    const newBlog = {
+      title: 'Blog to delete',
+      author: 'Test Author',
+      url: 'http://testdelete.com',
+      likes: 5
+    };
 
+    const createResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog);
+
+    const blogToDelete = createResponse.body;
+
+    // Delete the blog as the same user
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
       .set('Authorization', `Bearer ${token}`)
-      .expect(204)
+      .expect(204);
 
-    const blogsAtEnd = await Blog.find({})
-    expect(blogsAtEnd).toHaveLength(initialBlogs.length - 1)
-
-    const titles = blogsAtEnd.map(b => b.title)
-    expect(titles).not.toContain(blogToDelete.title)
-  })
+    // Verify the blog is deleted
+    const blogsAtEnd = await Blog.find({});
+    const titles = blogsAtEnd.map(b => b.title);
+    expect(titles).not.toContain(blogToDelete.title);
+  });
 
   test('fails with status code 401 if token is not provided', async () => {
-    const blogsAtStart = await Blog.find({})
-    const blogToDelete = blogsAtStart[0]
+    const blogsAtStart = await Blog.find({});
+    const blogToDelete = blogsAtStart[0];
 
     await api
       .delete(`/api/blogs/${blogToDelete.id}`)
-      .expect(401)
+      .expect(401);
 
-    const blogsAtEnd = await Blog.find({})
-    expect(blogsAtEnd).toHaveLength(initialBlogs.length)
-  })
+    const blogsAtEnd = await Blog.find({});
+    expect(blogsAtEnd).toHaveLength(blogsAtStart.length);
+  });
+
+  test('fails with status code 403 if user is not the creator', async () => {
+    // Create a blog as the test user
+    const newBlog = {
+      title: 'Blog by first user',
+      author: 'Test Author',
+      url: 'http://testblog.com',
+      likes: 5
+    };
+
+    const createResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog);
+
+    const blogToDelete = createResponse.body;
+
+    // Create a second user
+    const passwordHash = await bcrypt.hash('secondpass', 10);
+    const secondUser = new User({
+      username: 'seconduser',
+      name: 'Second User',
+      passwordHash,
+    });
+    await secondUser.save();
+
+    // Login as the second user
+    const loginResponse = await api
+      .post('/api/login')
+      .send({
+        username: 'seconduser',
+        password: 'secondpass',
+      });
+    const secondToken = loginResponse.body.token;
+
+    // Try to delete the blog as the second user
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${secondToken}`)
+      .expect(403);
+
+    // Verify the blog is not deleted
+    const blogsAtEnd = await Blog.find({});
+    const titles = blogsAtEnd.map(b => b.title);
+    expect(titles).toContain(blogToDelete.title);
+  });
 })
 
 describe('updating a blog', () => {

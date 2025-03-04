@@ -1,7 +1,7 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user') // Import User model
-const { userExtractor } = require('../middleware/auth')
+// const { userExtractor } = require('../middleware/auth')
 
 // blogsRouter.get('/', (request, response) => {
 //   Blog
@@ -19,7 +19,9 @@ blogsRouter.get('/', async (request, response) => {
 // blogsRouter.post('/', (request, response) => {
   // POST a new blog
   // blogsRouter.post('/', async (request, response) => {
-  blogsRouter.post('/', userExtractor, async (request, response) => {
+  // blogsRouter.post('/', userExtractor, async (request, response) => {
+    // POST a new blog
+blogsRouter.post('/', async (request, response) => {
   const body = request.body;
   
   // Check if user is authenticated
@@ -65,7 +67,8 @@ blogsRouter.get('/', async (request, response) => {
 // })
 
 // DELETE a blog post by ID
-blogsRouter.delete('/:id', userExtractor, async (request, response) => {
+// blogsRouter.delete('/:id', userExtractor, async (request, response) => {
+blogsRouter.delete('/:id', async (request, response) => {
   try {
     // Check if user is authenticated
     if (!request.user) {

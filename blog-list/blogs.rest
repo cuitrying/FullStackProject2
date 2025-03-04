@@ -6,17 +6,39 @@ POST http://localhost:3003/api/login
 Content-Type: application/json
 
 {
-  "username": "testuser1",
+  "username": "test1",
+  "name": "TEST1",
   "password": "password123"
+}
+
+### Login
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass"
 }
 
 ### Create a new blog with token
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImlkIjoiNjdjNGNmYTM3NWQ5NzIwMDZjNmEwN2Q2IiwiaWF0IjoxNzQwOTUxNTAyLCJleHAiOjE3NDA5NTUxMDJ9.53Ek1N4EbOfNeA8gVL2hkChfhyFzodml9n4UPWh81Ko
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QxIiwiaWQiOiI2N2M3NjA4ZWE3YzJmMjQ5ZDg4OGVmMzYiLCJpYXQiOjE3NDExMTk2NDQsImV4cCI6MTc0MTEyMzI0NH0.JyHDRco5Z3M-msINt4z-ejxKuhQZrgthonPwoHV0_3I
 
 {
-  "title": "Test Blog with Token",
+  "title": "Test Blog with Token xxxx",
+  "author": "Test Author xxx",
+  "url": "http://testblog.com",
+  "likes": 5
+}
+
+### Create a new blog with userExtractor
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWQiOiI2N2M3NjIzNDZkYzcyMTNmODAxZjdmMWUiLCJpYXQiOjE3NDExMjA2MjksImV4cCI6MTc0MTEyNDIyOX0.-k1EX65HsF_UxoWWh2Lu4QnEqr9XryfvFWs58FEZlDI
+
+{
+  "title": "Test Blog with userExtractordsdsds",
   "author": "Test Author",
   "url": "http://testblog.com",
   "likes": 5
@@ -38,6 +60,9 @@ Content-Type: application/json
 DELETE http://localhost:3003/api/blogs/67c4cff275d972006c6a07dd
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImlkIjoiNjdjNGNmYTM3NWQ5NzIwMDZjNmEwN2Q2IiwiaWF0IjoxNzQwOTUxNTAyLCJleHAiOjE3NDA5NTUxMDJ9.53Ek1N4EbOfNeA8gVL2hkChfhyFzodml9n4UPWh81Ko
 
+### Delete a blog with userExtractor
+DELETE http://localhost:3003/api/blogs/67c764976f6ea0fdd0ef6a22
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWQiOiI2N2M3NjIzNDZkYzcyMTNmODAxZjdmMWUiLCJpYXQiOjE3NDExMjA2MjksImV4cCI6MTc0MTEyNDIyOX0.-k1EX65HsF_UxoWWh2Lu4QnEqr9XryfvFWs58FEZlDI
 
 ### Get all users
 GET http://localhost:3003/api/users
@@ -47,7 +72,7 @@ POST http://localhost:3003/api/users
 Content-Type: application/json
 
 {
-  "username": "testuser1",
-  "name": "Test User",
+  "username": "test1",
+  "name": "TEST1",
   "password": "password123"
 }
