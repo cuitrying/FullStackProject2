@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Blog from './components/Blog'
+import BlogForm from './components/BlogForm'
+import Togglable from './components/Togglable'
 import Notification from './components/Notification'
 import blogService from './services/blogs'
 import loginService from './services/login'
@@ -9,10 +11,9 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [title, setTitle] = useState('')
-  const [author, setAuthor] = useState('')
-  const [url, setUrl] = useState('')
   const [notification, setNotification] = useState({ message: null, type: null })
+  
+  const blogFormRef = useRef()
 
   const fetchBlogs = async () => {
     try {
@@ -95,27 +96,49 @@ const App = () => {
     showNotification('Logged out successfully', 'success')
   }
 
-  const addBlog = async (event) => {
-    event.preventDefault()
-    
+  const addBlog = async (blogObject) => {
     try {
-      const blogObject = {
-        title,
-        author,
-        url
-      }
-      
       const newBlog = await blogService.create(blogObject)
       setBlogs(blogs.concat(newBlog))
       
-      // Clear form fields after successful creation
-      setTitle('')
-      setAuthor('')
-      setUrl('')
-      showNotification(`a new blog ${title} by ${author} added`, 'success')
+      // Hide the form after successful blog creation
+      blogFormRef.current.toggleVisibility()
+      
+      showNotification(`a new blog ${blogObject.title} by ${blogObject.author} added`, 'success')
     } catch (exception) {
       console.error('Error creating blog:', exception)
       showNotification('Failed to create blog', 'error')
+    }
+  }
+
+  const updateBlog = (updatedBlog) => {
+    setBlogs(
+      blogs.map(blog => 
+        blog.id === updatedBlog.id 
+          ? { 
+              ...updatedBlog,
+              // Ensure user information is preserved
+              user: updatedBlog.user || blog.user 
+            } 
+          : blog
+      )
+    )
+  }
+
+  const removeBlog = async (id, title, author) => {
+    try {
+      // Use window.confirm to ask for confirmation
+      if (window.confirm(`Remove blog ${title} by ${author}?`)) {
+        await blogService.remove(id)
+        
+        // Update state to remove the deleted blog
+        setBlogs(blogs.filter(blog => blog.id !== id))
+        
+        showNotification(`Blog '${title}' by ${author} was deleted successfully`, 'success')
+      }
+    } catch (error) {
+      console.error('Error removing blog:', error)
+      showNotification('Failed to remove blog', 'error')
     }
   }
 
@@ -160,39 +183,21 @@ const App = () => {
         <button onClick={handleLogout}>logout</button>
       </p>
       
-      <h2>create new</h2>
-      <form onSubmit={addBlog}>
-        <div>
-          title:
-          <input
-            type="text"
-            value={title}
-            name="Title"
-            onChange={({ target }) => setTitle(target.value)}
-          />
-        </div>
-        <div>
-          author:
-          <input
-            type="text"
-            value={author}
-            name="Author"
-            onChange={({ target }) => setAuthor(target.value)}
-          />
-        </div>
-        <div>
-          url:
-          <input
-            type="text"
-            value={url}
-            name="Url"
-            onChange={({ target }) => setUrl(target.value)}
-          />
-        </div>
-        <button type="submit">create</button>
-      </form>
+      <Togglable buttonLabel="create new blog" ref={blogFormRef}>
+        <BlogForm createBlog={addBlog} />
+      </Togglable>
       
-      {blogs.map(blog => <Blog key={blog.id} blog={blog} />)}
+      {blogs
+        .sort((a, b) => b.likes - a.likes) // Sort blogs by likes in descending order
+        .map(blog =>
+          <Blog 
+            key={blog.id} 
+            blog={blog} 
+            updateBlog={updateBlog}
+            user={user}
+            handleRemove={removeBlog}
+          />
+        )}
     </div>
   )
 }
