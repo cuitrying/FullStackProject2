@@ -22,43 +22,50 @@ blogsRouter.get('/', async (request, response) => {
   // blogsRouter.post('/', userExtractor, async (request, response) => {
     // POST a new blog
 blogsRouter.post('/', async (request, response) => {
-  const body = request.body;
-  
-  // Check if user is authenticated
-  if (!request.user) {
-    return response.status(401).json({ error: 'token missing or invalid' });
-  }
+  try {
+    const body = request.body;
+    
+    // Check if user is authenticated
+    if (!request.user) {
+      return response.status(401).json({ error: 'token missing or invalid' });
+    }
 
-  // Validate required fields
-  if (!body.title || !body.url) {
-    return response.status(400).json({ error: 'title or url missing' });
-  }
-  
-  // Get the user from the request (set by userExtractor middleware)
-  const user = request.user;
-  
-  // if (!user) {
-  //   return response.status(401).json({ error: 'token missing or invalid' });
-  // }
+    // Validate required fields
+    if (!body.title || !body.url) {
+      return response.status(400).json({ error: 'title or url missing' });
+    }
+    
+    const user = await User.findById(request.user.id);
+    
+    if (!user) {
+      return response.status(401).json({ error: 'user not found' });
+    }
 
-  const blog = new Blog({
-    title: body.title,
-    author: body.author,
-    url: body.url,
-    likes: body.likes || 0,
-    user: user._id
-  });
-  
-  const savedBlog = await blog.save();
-  
-  // Update the user's blogs array
-  user.blogs = user.blogs.concat(savedBlog._id);
-  await user.save();
-  
-  // Populate the user information before returning
-  const populatedBlog = await Blog.findById(savedBlog._id).populate('user', { username: 1, name: 1 });
-  
-  response.status(201).json(populatedBlog);
+    const blog = new Blog({
+      title: body.title,
+      author: body.author,
+      url: body.url,
+      likes: body.likes || 0,
+      user: user._id
+    });
+    
+    const savedBlog = await blog.save();
+    
+    // Update the user's blogs array with findByIdAndUpdate instead of save
+    await User.findByIdAndUpdate(
+      user._id,
+      { $push: { blogs: savedBlog._id } },
+      { new: true, runValidators: true }
+    );
+    
+    // Populate the user information before returning
+    const populatedBlog = await Blog.findById(savedBlog._id).populate('user', { username: 1, name: 1 });
+    
+    response.status(201).json(populatedBlog);
+  } catch (error) {
+    console.error('Error creating blog:', error);
+    response.status(500).json({ error: 'Error creating blog' });
+  }
 })
 // blog
 // .save()
