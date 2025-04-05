@@ -42,8 +42,10 @@ export const createAnecdote = (content) => {
     try {
       const newAnecdote = await anecdoteService.createNew(content)
       dispatch(appendAnecdote(newAnecdote))
+      return newAnecdote
     } catch (error) {
       console.error('Error creating anecdote:', error)
+      throw error
     }
   }
 }
